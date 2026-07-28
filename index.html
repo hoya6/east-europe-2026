@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>多瑙河璀璨金秋漫遊 | 東歐三國</title>
+  <script>
+    // Suppress Tailwind CDN production warning
+    tailwind = { config: { corePlugins: { preflight: true } } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FFF1EB;
+      --text: #4A3525;
+      --hu: #FFB7B2;
+      --sk: #C1E1C1;
+      --cz: #AEC6CF;
+    }
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-display { font-family: 'Quicksand', 'Comfortaa', sans-serif; }
+    .max-app { max-width: 28rem; margin-left: auto; margin-right: auto; }
+    /* Falling leaves */
+    .leaf {
+      position: absolute;
+      width: 18px; height: 18px;
+      background: #E07A5F;
+      border-radius: 0 80% 0 80%;
+      opacity: 0.75;
+      animation: fall linear infinite;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .leaf:nth-child(2n) { background: #F2CC8F; border-radius: 80% 0 80% 0; }
+    .leaf:nth-child(3n) { background: #C97B63; }
+    .leaf:nth-child(4n) { background: #D4A373; width: 14px; height: 14px; }
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.8; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+    /* Timeline */
+    .timeline-line { position: absolute; left: 1.15rem; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, var(--hu), var(--sk), var(--cz)); border-radius: 99px; }
+    .card-img { position: relative; overflow: hidden; border-radius: 0.75rem; }
+    .card-img img { width: 100%; height: 140px; object-fit: cover; }
+    .card-img::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(74,53,37,0.55) 0%, transparent 55%);
+    }
+    /* Checkbox strike */
+    input[type="checkbox"]:checked + span { text-decoration: line-through; opacity: 0.55; }
+    /* Bottom nav safe area */
+    .bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0.5rem); }
+    /* Hide scrollbar for day tabs */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Modal */
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-[var(--bg)] text-[var(--text)]" x-data="app()" x-init="init()">
+
+  <!-- Falling Leaves -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <template x-for="i in 14" :key="i">
+      <div class="leaf" :style="`left:${Math.random()*100}%; animation-duration:${6+Math.random()*8}s; animation-delay:${Math.random()*5}s;`"></div>
+    </template>
+  </div>
+
+  <div class="max-app min-h-screen relative z-10 shadow-2xl bg-[var(--bg)] pb-24">
+
+    <!-- ========== HERO ========== -->
+    <header class="relative h-56 overflow-hidden rounded-b-3xl">
+      <img src="https://loremflickr.com/800/500/budapest,parliament,danube" alt="Budapest" class="absolute inset-0 w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-[#4A3525]/80 via-[#4A3525]/40 to-transparent"></div>
+      <div class="relative z-10 h-full flex flex-col justify-end p-5">
+        <h1 class="font-display text-2xl font-bold text-white tracking-wide whitespace-nowrap drop-shadow-lg">多瑙河璀璨金秋漫遊</h1>
+        <p class="text-white/90 text-sm mt-1 whitespace-nowrap drop-shadow">（匈牙利、斯洛伐克、捷克）23日（10/29 – 11/20）</p>
+      </div>
+    </header>
+
+    <!-- ========== COUNTRY TABS ========== -->
+    <nav class="sticky top-0 z-30 bg-[var(--bg)]/95 backdrop-blur-md border-b border-[#4A3525]/10 px-3 pt-3">
+      <div class="flex gap-2 mb-2">
+        <template x-for="c in countries" :key="c.id">
+          <button @click="activeCountry = c.id; activeDay = days.filter(d => d.country === c.id)[0]?.id || activeDay"
+                  class="flex-1 py-2 rounded-full text-sm font-medium transition-all"
+                  :class="activeCountry === c.id ? 'text-white shadow-md' : 'bg-white/70 text-[var(--text)]'"
+                  :style="activeCountry === c.id ? `background:${c.color}` : ''"
+                  x-text="c.name"></button>
+        </template>
+      </div>
+      <!-- Day horizontal scroll -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-3" x-show="currentView === 'plan'">
+        <template x-for="d in filteredDays" :key="d.id">
+          <button @click="activeDay = d.id"
+                  class="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition"
+                  :class="activeDay === d.id ? 'text-white shadow' : 'bg-white/80'"
+                  :style="activeDay === d.id ? `background:${countryColor(d.country)}` : ''"
+                  x-text="d.label"></button>
+        </template>
+      </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="px-4 pt-4">
+
+      <!-- ===== PLAN ===== -->
+      <div x-show="currentView === 'plan'" x-cloak>
+        <template x-for="day in filteredDays" :key="day.id">
+          <div x-show="activeDay === day.id" class="space-y-4">
+            <!-- Weather + Date header -->
+            <div class="flex items-center justify-between bg-white/80 rounded-2xl px-4 py-3 shadow-sm">
+              <div>
+                <p class="font-display font-semibold text-lg" x-text="day.fullDate"></p>
+                <p class="text-sm opacity-70" x-text="day.city"></p>
+              </div>
+              <button @click="fetchWeather(day)" class="flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 shadow text-sm font-medium"
+                      :style="`border: 2px solid ${countryColor(day.country)}`">
+                <span x-text="day.weatherIcon || '⛅'"></span>
+                <span x-text="day.temp !== null ? day.temp + '°C' : '天氣'"></span>
+              </button>
+            </div>
+
+            <!-- Timeline -->
+            <div class="relative pl-10">
+              <div class="timeline-line" :style="`background:${countryColor(day.country)}`"></div>
+              <template x-for="(item, idx) in day.items" :key="idx">
+                <div class="relative mb-5">
+                  <div class="absolute -left-10 top-3 w-6 h-6 rounded-full flex items-center justify-center text-xs text-white shadow"
+                       :style="`background:${countryColor(day.country)}`" x-text="item.emoji || '📍'"></div>
+                  <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+                    <!-- Image if attraction or hotel -->
+                    <div class="card-img" x-show="item.imgKey">
+                      <img :src="`https://loremflickr.com/600/300/${item.imgKey}`" :alt="item.title" loading="lazy" />
+                      <div class="absolute bottom-2 left-3 right-3 z-10 text-white font-medium text-sm drop-shadow" x-text="item.title"></div>
+                    </div>
+                    <div class="p-4">
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <p class="text-xs opacity-60" x-text="item.time"></p>
+                          <h3 class="font-semibold text-base mt-0.5" x-text="item.title"></h3>
+                        </div>
+                        <span class="text-xl" x-text="item.emoji"></span>
+                      </div>
+                      <p class="text-sm mt-2 leading-relaxed opacity-85" x-text="item.desc"></p>
+                      <div class="flex flex-wrap gap-2 mt-3">
+                        <template x-if="item.map">
+                          <a :href="item.map" target="_blank" rel="noopener"
+                             class="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full text-white shadow-sm"
+                             :style="`background:${countryColor(day.country)}`">
+                            🗺️ 導航
+                          </a>
+                        </template>
+                        <template x-if="item.modal">
+                          <button @click="openModal(item.modal)"
+                                  class="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-[#4A3525]/10 underline decoration-2"
+                                  :style="`text-decoration-color:${countryColor(day.country)}`"
+                                  x-text="item.modalLabel || '詳情'"></button>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ===== LISTS ===== -->
+      <div x-show="currentView === 'lists'" x-cloak class="space-y-5">
+        <h2 class="font-display text-xl font-bold">🧳 行李 Checklist</h2>
+        <div class="bg-white rounded-2xl shadow-md p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+          <template x-for="(cat, cIdx) in luggage" :key="cIdx">
+            <div>
+              <p class="font-medium text-sm mb-2 opacity-80" x-text="cat.title"></p>
+              <template x-for="(item, iIdx) in cat.items" :key="iIdx">
+                <label class="flex items-center gap-3 py-1.5 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded accent-[#E07A5F]" x-model="item.checked" />
+                  <span class="text-sm" x-text="item.name"></span>
+                </label>
+              </template>
+            </div>
+          </template>
+        </div>
+        <h2 class="font-display text-xl font-bold">📝 個人備忘錄</h2>
+        <textarea x-model="memo" rows="5" placeholder="寫下你的提醒、餐廳願望清單、購物清單…"
+                  class="w-full bg-white rounded-2xl shadow-md p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#FFB7B2]"></textarea>
+      </div>
+
+      <!-- ===== INFO ===== -->
+      <div x-show="currentView === 'info'" x-cloak class="space-y-5">
+        <h2 class="font-display text-xl font-bold">✈️ 航班資訊</h2>
+        <div class="space-y-3">
+          <template x-for="f in flights" :key="f.id">
+            <div class="bg-white rounded-2xl shadow-md p-4">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="font-semibold" x-text="f.route"></p>
+                  <p class="text-sm opacity-70 mt-1" x-text="f.detail"></p>
+                </div>
+                <span class="text-2xl">✈️</span>
+              </div>
+              <p class="text-xs mt-2 opacity-60" x-text="f.baggage"></p>
+              <button @click="openModal(f.modal)" class="mt-2 text-xs underline" style="text-decoration-color:#FFB7B2">更多細節</button>
+            </div>
+          </template>
+        </div>
+
+        <h2 class="font-display text-xl font-bold mt-6">🏨 住宿清單</h2>
+        <div class="space-y-3">
+          <template x-for="h in hotels" :key="h.id">
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+              <div class="card-img h-28">
+                <img :src="`https://loremflickr.com/600/300/${h.imgKey},exterior,building`" :alt="h.name" class="w-full h-28 object-cover" />
+              </div>
+              <div class="p-4">
+                <p class="font-semibold" x-text="h.name"></p>
+                <p class="text-sm opacity-70" x-text="h.period"></p>
+                <p class="text-xs mt-1 opacity-60" x-text="h.address"></p>
+                <div class="flex gap-2 mt-3">
+                  <a :href="h.map" target="_blank" class="text-xs px-3 py-1.5 rounded-full text-white" :style="`background:${h.color}`">🗺️ 導航</a>
+                  <button @click="openModal(h.modal)" class="text-xs px-3 py-1.5 rounded-full bg-[#4A3525]/10">詳情</button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <h2 class="font-display text-xl font-bold mt-6">🆘 緊急聯絡</h2>
+        <div class="bg-white rounded-2xl shadow-md p-4 space-y-2 text-sm">
+          <p><span class="font-medium">歐盟緊急電話：</span> 112</p>
+          <p><span class="font-medium">駐匈牙利代表處：</span> +36-1-214-0900</p>
+          <p><span class="font-medium">駐斯洛伐克代表處：</span> +421-2-5441-0616</p>
+          <p><span class="font-medium">駐捷克代表處：</span> +420-233-320-606</p>
+        </div>
+
+        <h2 class="font-display text-xl font-bold mt-6">📌 自由備註</h2>
+        <textarea x-model="infoNote" rows="4" placeholder="保險單號、接送預約、重要提醒…"
+                  class="w-full bg-white rounded-2xl shadow-md p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#AEC6CF]"></textarea>
+      </div>
+
+      <!-- ===== BUDGET ===== -->
+      <div x-show="currentView === 'budget'" x-cloak class="space-y-5">
+        <div class="rounded-2xl p-5 text-white shadow-lg" style="background: linear-gradient(135deg, #FFB7B2, #C1E1C1, #AEC6CF);">
+          <p class="text-sm opacity-90">總預算概覽（4人）</p>
+          <p class="font-display text-3xl font-bold mt-1">NT$ 503,606</p>
+          <p class="text-sm mt-2 opacity-90">每人平均 · NT$ 125,902</p>
+        </div>
+
+        <template x-for="cat in budget" :key="cat.name">
+          <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div class="px-4 py-3 font-semibold flex justify-between" :style="`background:${cat.color}33`">
+              <span x-text="cat.name"></span>
+              <span x-text="'NT$ ' + cat.total.toLocaleString()"></span>
+            </div>
+            <div class="p-4 space-y-2 text-sm">
+              <template x-for="item in cat.items" :key="item.name">
+                <div class="flex justify-between gap-2">
+                  <span class="opacity-80" x-text="item.name"></span>
+                  <span class="font-medium whitespace-nowrap" x-text="'NT$ ' + item.amount.toLocaleString()"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========== BOTTOM NAV ========== -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 max-app mx-auto bg-white/95 backdrop-blur-md border-t border-[#4A3525]/10 bottom-nav shadow-[0_-4px_20px_rgba(74,53,37,0.08)]">
+    <div class="flex justify-around py-2">
+      <template x-for="tab in tabs" :key="tab.id">
+        <button @click="currentView = tab.id"
+                class="flex flex-col items-center gap-0.5 px-3 py-1 transition"
+                :class="currentView === tab.id ? 'scale-105' : 'opacity-60'">
+          <span class="text-xl" x-text="tab.icon"
+                :style="currentView === tab.id ? `filter: drop-shadow(0 0 4px ${countryColor(activeCountry)})` : ''"></span>
+          <span class="text-[10px] font-medium" x-text="tab.label"
+                :style="currentView === tab.id ? `color:${countryColor(activeCountry)}` : ''"></span>
+        </button>
+      </template>
+    </div>
+  </nav>
+
+  <!-- ========== MODAL ========== -->
+  <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40" @click.self="modalOpen = false">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto p-5 shadow-2xl" @click.stop>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-display font-bold text-lg" x-text="modalTitle"></h3>
+        <button @click="modalOpen = false" class="text-2xl leading-none opacity-50">×</button>
+      </div>
+      <div class="text-sm leading-relaxed whitespace-pre-line" x-text="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        currentView: 'plan',
+        activeCountry: 'hu',
+        activeDay: 'd1',
+        modalOpen: false,
+        modalTitle: '',
+        modalContent: '',
+        memo: '',
+        infoNote: '',
+
+        countries: [
+          { id: 'hu', name: '匈牙利', color: '#FFB7B2' },
+          { id: 'sk', name: '斯洛伐克', color: '#C1E1C1' },
+          { id: 'cz', name: '捷克', color: '#AEC6CF' }
+        ],
+        tabs: [
+          { id: 'plan', label: '行程', icon: '📅' },
+          { id: 'lists', label: '清單', icon: '✅' },
+          { id: 'info', label: '資訊', icon: 'ℹ️' },
+          { id: 'budget', label: '預算', icon: '💰' }
+        ],
+
+        get filteredDays() {
+          return this.days.filter(d => d.country === this.activeCountry);
+        },
+
+        countryColor(id) {
+          return this.countries.find(c => c.id === id)?.color || '#FFB7B2';
+        },
+
+        openModal(data) {
+          this.modalTitle = data.title;
+          this.modalContent = data.content;
+          this.modalOpen = true;
+        },
+
+        async fetchWeather(day) {
+          if (day.temp !== null) return;
+          try {
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${day.lat}&longitude=${day.lng}&current=temperature_2m,weather_code&timezone=auto`);
+            const data = await res.json();
+            day.temp = Math.round(data.current.temperature_2m);
+            const code = data.current.weather_code;
+            day.weatherIcon = code <= 3 ? '☀️' : code <= 48 ? '⛅' : code <= 67 ? '🌧️' : code <= 77 ? '🌨️' : '⛈️';
+          } catch (e) {
+            day.weatherIcon = '🌡️';
+            day.temp = '--';
+          }
+        },
+
+        init() {
+          // Auto load weather for first visible day
+          const first = this.filteredDays[0];
+          if (first) this.fetchWeather(first);
+        },
+
+        // ========== DAYS DATA ==========
+        days: [
+          // --- HUNGARY ---
+          {
+            id: 'd1', country: 'hu', label: 'Day 1 10/30', fullDate: '10/30 週五', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '07:05', title: '抵達布達佩斯機場', emoji: '✈️', desc: '東方航空經上海轉飛抵達李斯特·費倫茨國際機場 T2B。建議預先預約私人接送直達飯店，約 30 分鐘車程。', imgKey: null },
+              { time: '09:30–13:30', title: 'Nova Apartments 入住 + 多瑙河散步', emoji: '🏨', desc: '辦理入住後沿多瑙河漫步，欣賞塞切尼鏈橋與布達山城對望的經典視角，感受金秋午後陽光灑落河面。', imgKey: 'danube,chain-bridge,budapest', map: 'https://www.google.com/maps/place/Nova+Apartments+Budapest' },
+              { time: '17:00–19:00', title: '中央市集大廳', emoji: '🛒', desc: '布達佩斯最大室內市集，挑高華麗建築內販售香料、帕普rika、香腸與手工藝品。晚餐可在 Fakanál 品嚐地道匈牙利燉牛肉。', imgKey: 'great-market-hall,budapest', map: 'https://www.google.com/maps/place/%E5%B8%83%E9%81%94%E4%BD%A9%E6%96%AF%E4%B8%AD%E5%A4%AE%E5%B8%82%E5%A0%B4' }
+            ]
+          },
+          {
+            id: 'd2', country: 'hu', label: 'Day 2 10/31', fullDate: '10/31 週六', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00–13:00', title: '漁人堡 + 馬提亞斯教堂', emoji: '🏰', desc: '新哥特式白石堡壘俯瞰多瑙河與國會大廈，日落時分景色最美。鄰近馬提亞斯教堂彩繪屋頂與內部精美壁畫必訪。', imgKey: 'fishermans-bastion,budapest', map: 'https://www.google.com/maps/place/%E6%BC%81%E4%BA%BA%E5%A0%A1' },
+              { time: '15:00–17:00', title: '布達皇宮漫遊', emoji: '🏛️', desc: '布達城堡區核心，現為國立藝廊與歷史博物館所在。秋天落葉鋪滿石階，拍照絕美，可搭城堡纜車下山。', imgKey: 'buda-castle,budapest', map: 'https://www.google.com/maps/place/%E5%B8%83%E9%81%94%E5%9F%8E%E5%A0%A1' },
+              { time: '18:00–20:00', title: '鏈橋夜景', emoji: '🌉', desc: '塞切尼鏈橋華燈初上，獅子石雕與燈光倒映河面，是布達佩斯最浪漫的夜景之一。晚餐推薦 Café Kör。', imgKey: 'szechenyi-chain-bridge,night', map: 'https://www.google.com/maps/place/%E5%A1%9E%E5%88%87%E5%B0%BC%E9%8F%88%E6%A9%8B' }
+            ]
+          },
+          {
+            id: 'd3', country: 'hu', label: 'Day 3 11/01', fullDate: '11/01 週日', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00–11:30', title: '國會大廈導覽', emoji: '🏛️', desc: '新哥特式壯麗建築，匈牙利政治中心。內部導覽需提前預約，可見聖史蒂芬皇冠與華麗大廳。', imgKey: 'hungarian-parliament,budapest', map: 'https://www.google.com/maps/place/%E5%8C%88%E7%89%99%E5%88%A9%E5%9C%8B%E6%9C%83%E5%A4%A7%E5%BB%88' },
+              { time: '12:30–14:00', title: '自由廣場', emoji: '🗽', desc: '開闊廣場豎立蘇聯戰爭紀念碑與美國大使館，周圍新藝術風格建築林立，適合悠閒散步拍照。', imgKey: 'liberty-square,budapest', map: 'https://www.google.com/maps/place/%E8%87%AA%E7%94%B1%E5%BB%A3%E5%A0%B4' },
+              { time: '14:30–17:30', title: '聖伊什特萬大教堂 + 安德拉什大道', emoji: '⛪', desc: '布達佩斯最高建築之一，可登頂觀景平台遠眺全城。之後沿著世界遺產地鐵線旁的安德拉什大道漫步。', imgKey: 'st-stephens-basilica,budapest', map: 'https://www.google.com/maps/place/%E8%81%96%E4%BC%8A%E4%BB%80%E7%89%B9%E8%90%AC%E5%A4%A7%E6%95%99%E5%A0%82' },
+              { time: '19:00–20:30', title: 'New York Café 晚茶', emoji: '☕', desc: '被譽為世界最美咖啡館，華麗巴洛克裝潢與水晶吊燈令人屏息，務必提前訂位體驗奢華金秋下午茶。', imgKey: 'new-york-cafe,budapest', map: 'https://www.google.com/maps/place/%E5%B8%83%E9%81%94%E4%BD%A9%E6%96%AF%E5%AE%89%E7%B4%8D%E5%A1%94%E6%8B%89%E7%B4%90%E7%B4%84%E7%9A%87%E5%AE%AE%E9%85%92%E5%BA%97' }
+            ]
+          },
+          {
+            id: 'd4', country: 'hu', label: 'Day 4 11/02', fullDate: '11/02 週一', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–13:30', title: '塞切尼溫泉浴場', emoji: '♨️', desc: '歐洲最大溫泉浴場，金黃巴洛克建築與露天溫泉池。秋日泡湯雲霧繚繞，是布達佩斯必體驗的療癒時刻。', imgKey: 'szechenyi-bath,budapest', map: 'https://www.google.com/maps/place/%E5%A1%9E%E5%88%87%E5%B0%BC%E6%BA%AB%E6%B3%89%E6%B5%B4%E5%A0%B4' },
+              { time: '14:30–16:00', title: '城市公園 + 英雄廣場', emoji: '🏞️', desc: '英雄廣場紀念匈牙利建國千年歷史人物，後方城市公園綠意盎然，秋天楓紅與黃葉交織，適合悠閒散步。', imgKey: 'heroes-square,budapest', map: 'https://www.google.com/maps/place/%E8%8B%B1%E9%9B%84%E5%BB%A3%E5%A0%B4' },
+              { time: '18:00–19:30', title: '煙草街會堂夜景', emoji: '🕍', desc: '歐洲最大猶太會堂，新摩爾風格建築夜晚燈光璀璨。附近猶太區有許多特色餐廳與廢墟酒吧。', imgKey: 'dohany-synagogue,budapest', map: 'https://www.google.com/maps/place/%E7%85%99%E8%8D%89%E8%A1%97%E6%9C%83%E5%A0%82' }
+            ]
+          },
+          {
+            id: 'd5', country: 'hu', label: 'Day 5 11/03', fullDate: '11/03 週二', city: '布達佩斯近郊',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '09:30–17:30', title: '多瑙河彎一日遊', emoji: '🚗', desc: '聖安德烈藝術小鎮、維謝格拉德城堡與厄斯特貢大教堂，沿多瑙河彎風光絕美，金秋層林盡染最迷人。', imgKey: 'danube-bend,hungary', map: 'https://www.google.com/maps/place/%E8%81%96%E5%AE%89%E5%BE%B7%E7%83%88' },
+              { time: '18:00 後', title: '返回市區自由採購', emoji: '🛍️', desc: '傍晚返回布達佩斯，可在中央市集或安德拉什大道購買帕普rika、托卡伊酒等伴手禮。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd6', country: 'hu', label: 'Day 6 11/04', fullDate: '11/04 週三', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–12:30', title: '煙草街會堂內部', emoji: '🕍', desc: '深入參觀歐洲最大猶太會堂，了解布達佩斯猶太社區歷史與大屠殺紀念園，建築與故事同樣震撼。', imgKey: 'dohany-synagogue,interior', map: 'https://www.google.com/maps/place/%E7%85%99%E8%8D%89%E8%A1%97%E6%9C%83%E5%A0%82' },
+              { time: '15:00–16:30', title: '廢墟酒吧文化區', emoji: '🍻', desc: '以 Szimpla Kert 為代表的廢墟酒吧，舊工廠改造的藝術空間，充滿塗鴉與復古家具，夜晚氛圍獨特。', imgKey: 'szimpla-kert,budapest', map: 'https://www.google.com/maps/place/Szimpla+Kert' },
+              { time: '18:00–19:30', title: 'Rosenstein 晚餐', emoji: '🍽️', desc: '傳統匈牙利家庭料理名店，燉牛肉、鴨肉與帕普rika雞必點，份量大又道地，適合慢慢品嚐。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd7', country: 'hu', label: 'Day 7 11/05', fullDate: '11/05 週四', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–12:30', title: '瑪格麗特島', emoji: '🌳', desc: '多瑙河中的綠洲公園，音樂噴泉、日式庭園與腳踏車道。秋天銀杏與楓葉金黃，適合悠閒半日遊。', imgKey: 'margaret-island,budapest', map: 'https://www.google.com/maps/place/Margaret+Island+Water+Tower' },
+              { time: '18:30–20:30', title: '多瑙河遊船', emoji: '🚢', desc: '傍晚登船欣賞布達佩斯兩岸燈火，國會大廈與城堡在夜色中更顯壯麗，是此行必體驗的浪漫行程。', imgKey: 'danube-cruise,budapest', map: 'https://www.google.com/maps/place/River+cruise+budapest' }
+            ]
+          },
+          {
+            id: 'd8', country: 'hu', label: 'Day 8 11/06', fullDate: '11/06 週五', city: '布達佩斯',
+            lat: 47.4979, lng: 19.0402, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–12:30', title: '蓋勒特山登頂', emoji: '⛰️', desc: '自由女神像所在山丘，可步行或搭公車登上，俯瞰整座城市與多瑙河全景，秋日晴空能見度極佳。', imgKey: 'gellert-hill,budapest', map: 'https://www.google.com/maps/place/%E8%93%8B%E5%8B%92%E7%89%B9%E5%B1%B1' },
+              { time: '13:30–15:30', title: '蓋勒特溫泉（選配）', emoji: '♨️', desc: '新藝術風格溫泉浴場，馬賽克與彩繪玻璃華麗，室內外池皆有，與塞切尼風格截然不同的優雅體驗。', imgKey: 'gellert-bath,budapest' },
+              { time: '18:00–19:30', title: '歡送晚餐', emoji: '🍷', desc: '布達佩斯最後一晚，推薦 Kőleves 或市區特色餐廳，品嚐匈牙利紅酒與傳統料理，為下段旅程暖身。', imgKey: null }
+            ]
+          },
+          // --- SLOVAKIA ---
+          {
+            id: 'd9', country: 'sk', label: 'Day 9 11/07', fullDate: '11/07 週六', city: '布拉提斯拉瓦',
+            lat: 48.1486, lng: 17.1077, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:50', title: '巴士前往布拉提斯拉瓦', emoji: '🚌', desc: 'RegioJet 巴士約 3 小時抵達，風景沿多瑙河而行。抵達後入住 VIP Apartments，位置就在舊城核心。', imgKey: null },
+              { time: '15:00–18:00', title: '舊城區漫步', emoji: '🏛️', desc: '主廣場、聖馬丁大教堂與彩繪建築，秋日午後陽光灑在巴洛克立面，充滿童話氛圍。晚餐推薦 Slovak Pub。', imgKey: 'bratislava-old-town', map: 'https://www.google.com/maps/place/VIP+Apartments' }
+            ]
+          },
+          {
+            id: 'd10', country: 'sk', label: 'Day 10 11/08', fullDate: '11/08 週日', city: '布拉提斯拉瓦',
+            lat: 48.1486, lng: 17.1077, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–12:30', title: '布拉提斯拉瓦城堡', emoji: '🏰', desc: '四角白塔城堡俯瞰多瑙河與舊城，內部展覽與花園值得停留。秋日紅葉襯托城堡更顯壯麗。', imgKey: 'bratislava-castle', map: 'https://www.google.com/maps/place/%E5%B8%83%E6%8B%89%E8%BF%AA%E6%96%AF%E6%8B%89%E7%99%BC%E5%9F%8E%E5%A0%A1' },
+              { time: '15:00–16:30', title: 'UFO 觀景台', emoji: '🛸', desc: 'SNP 大橋上的飛碟造型觀景餐廳，可搭電梯登上俯瞰多瑙河與奧地利邊界，夕陽時分景色絕美。', imgKey: 'ufo-bratislava,bridge', map: 'https://www.google.com/maps/place/Eurovea+Embankment' },
+              { time: '18:00–19:30', title: 'Verne 景觀餐廳', emoji: '🍽️', desc: '舊城景觀餐廳，享用斯洛伐克料理與美景，適合結束充實的一天。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd11', country: 'sk', label: 'Day 11 11/09', fullDate: '11/09 週一', city: '布拉提斯拉瓦',
+            lat: 48.1486, lng: 17.1077, temp: null, weatherIcon: null,
+            items: [
+              { time: '09:30–17:30', title: '【選配】維也納一日遊', emoji: '🚂', desc: 'Railjet 火車約 1 小時直達維也納。可遊覽舊城、聖史蒂芬大教堂、國家歌劇院外觀與熊布朗宮花園。', imgKey: 'vienna,schonbrunn', map: null },
+              { time: '備案', title: '黛芬城堡半日遊', emoji: '🏰', desc: '若不赴維也納，可前往多瑙河與摩拉瓦河交匯處的黛芬城堡遺址，秋日河景與廢墟極具詩意。', imgKey: 'devin-castle' }
+            ]
+          },
+          // --- CZECH ---
+          {
+            id: 'd12', country: 'cz', label: 'Day 12 11/10', fullDate: '11/10 週二', city: '庫倫洛夫',
+            lat: 48.8127, lng: 14.3175, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00', title: '私車前往庫倫洛夫', emoji: '🚗', desc: '私人接送約 4.5–5 小時，沿途可休息。抵達童話小鎮 LH Hotel Mlýn，河畔位置絕佳。', imgKey: null },
+              { time: '17:00–19:00', title: '舊城黃昏漫步', emoji: '🌇', desc: '彩繪塔、城堡橋與伏爾塔瓦河彎道，夕陽染紅屋頂與河面，宛如油畫中的中世紀小鎮。', imgKey: 'cesky-krumlov,sunset', map: 'https://www.google.com/maps/place/Hotel+Ml%C3%BDn' }
+            ]
+          },
+          {
+            id: 'd13', country: 'cz', label: 'Day 13 11/11', fullDate: '11/11 週三', city: '庫倫洛夫',
+            lat: 48.8127, lng: 14.3175, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00–12:30', title: '庫倫洛夫城堡', emoji: '🏰', desc: '捷克第二大城堡群，可登塔俯瞰全鎮與河灣，熊壕溝裡的棕熊是特色。秋日城堡花園層林盡染。', imgKey: 'cesky-krumlov-castle', map: 'https://www.google.com/maps/place/%E6%8D%B7%E5%85%8B%E5%85%8B%E9%AD%AF%E5%A7%86%E6%B4%9B%E5%A4%AB%E5%9F%8E%E5%A0%A1' },
+              { time: '15:00–17:00', title: '斗篷橋 + 觀景台', emoji: '🌉', desc: '連接城堡與花園的多層拱橋，以及 Seminární 花園觀景台，是拍攝庫倫洛夫全景的最佳位置。', imgKey: 'cloak-bridge,cesky-krumlov', map: 'https://www.google.com/maps/place/%E6%96%97%E7%AF%B7%E6%A9%8B' },
+              { time: '18:00–19:30', title: 'Laibon 河景晚餐', emoji: '🍽️', desc: '河畔蔬食餐廳，環境安靜，可邊用餐邊欣賞夜燈倒映河面，結束美好的小鎮夜晚。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd14', country: 'cz', label: 'Day 14 11/12', fullDate: '11/12 週四', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '12:00', title: '巴士前往布拉格', emoji: '🚌', desc: 'RegioJet 巴士約 3 小時抵達布拉格。入住瓦茨拉夫廣場附近的 Wenceslas Square Residence。', imgKey: null },
+              { time: '16:00–18:00', title: '瓦茨拉夫廣場 + 國家博物館', emoji: '🏛️', desc: '布拉格最重要的廣場與大道，國家博物館雄偉建築矗立廣場盡頭，秋日午後適合散步感受城市脈動。', imgKey: 'wenceslas-square,prague', map: 'https://www.google.com/maps/place/Wenceslas+Square+Residence' }
+            ]
+          },
+          {
+            id: 'd15', country: 'cz', label: 'Day 15 11/13', fullDate: '11/13 週五', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00–12:30', title: '布拉格城堡 + 聖維特大教堂', emoji: '🏰', desc: '世界上最大的古城堡建築群，聖維特大教堂高聳尖塔與彩繪玻璃令人讚嘆，秋日城堡區遊人較少更顯靜謐。', imgKey: 'prague-castle,st-vitus', map: 'https://www.google.com/maps/place/%E5%B8%83%E6%8B%89%E6%A0%BC%E5%9F%8E%E5%A0%A1' },
+              { time: '13:00–14:30', title: '黃金巷', emoji: '🏘️', desc: '城堡內色彩繽紛的迷你小屋街，相傳為煉金術士與工匠居所，卡夫卡也曾在此居住，充滿故事感。', imgKey: 'golden-lane,prague' },
+              { time: '15:30–16:30', title: '皇家花園觀景', emoji: '🌳', desc: '城堡北側皇家花園與觀景台，可遠眺布拉格紅屋頂海洋與伏爾塔瓦河，秋葉金黃時分最美。', imgKey: 'prague-royal-garden' }
+            ]
+          },
+          {
+            id: 'd16', country: 'cz', label: 'Day 16 11/14', fullDate: '11/14 週六', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:00–11:30', title: '查理大橋', emoji: '🌉', desc: '布拉格最著名石橋，兩側聖者雕像與街頭藝人，清晨或黃昏人潮較少，可慢慢欣賞伏爾塔瓦河景。', imgKey: 'charles-bridge,prague', map: 'https://www.google.com/maps/place/%E6%9F%A5%E7%90%86%E5%A4%A7%E6%A9%8B' },
+              { time: '12:00–13:30', title: '老城廣場 + 天文鐘', emoji: '⏰', desc: '中世紀廣場中心，天文鐘整點表演吸引遊客。泰恩教堂雙塔與彩色建築環繞，是布拉格的心臟。', imgKey: 'old-town-square,prague', map: 'https://www.google.com/maps/place/%E8%80%81%E5%9F%8E%E5%BB%A3%E5%A0%B4' },
+              { time: '15:00–16:30', title: '猶太區', emoji: '🕍', desc: '西班牙會堂華麗摩爾風格與老新猶太會堂哥特建築，深刻感受布拉格猶太社區的歷史與文化。', imgKey: 'spanish-synagogue,prague', map: 'https://www.google.com/maps/place/%E8%A5%BF%E7%8F%AD%E7%89%99%E6%9C%83%E5%A0%82' },
+              { time: '18:30–20:30', title: 'U Fleků 啤酒晚餐', emoji: '🍺', desc: '自 1499 年營業的百年啤酒屋，黑啤與捷克傳統料理是經典組合，氛圍熱鬧充滿在地感。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd17', country: 'cz', label: 'Day 17 11/15', fullDate: '11/15 週日', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–13:00', title: '佩特辛山 + 瞭望塔', emoji: '🗼', desc: '搭纜車或步行上山，仿艾菲爾鐵塔的瞭望塔可遠眺全城。玫瑰園與迷宮也值得一遊，秋日清新宜人。', imgKey: 'petrin-tower,prague', map: 'https://www.google.com/maps/place/%E4%BD%A9%E7%89%B9%E4%BB%BB%E7%9E%AD%E6%9C%9B%E5%A1%94' },
+              { time: '14:30–16:00', title: '小城區漫步', emoji: '🏘️', desc: '查理大橋西岸的巴洛克宮殿與庭園區，窄巷與彩繪房屋充滿詩意，適合慢慢探險與拍照。', imgKey: 'mala-strana,prague' }
+            ]
+          },
+          {
+            id: 'd18', country: 'cz', label: 'Day 18 11/16', fullDate: '11/16 週一', city: '布拉格近郊',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '09:30–17:00', title: '庫特納霍拉一日遊', emoji: '🦴', desc: '塞德萊茨人骨教堂以人骨裝飾聞名，聖芭芭拉大教堂哥特建築壯麗，舊城散策感受銀礦小鎮歷史。', imgKey: 'kutna-hora,sedlec-ossuary', map: null }
+            ]
+          },
+          {
+            id: 'd19', country: 'cz', label: 'Day 19 11/17', fullDate: '11/17 週二', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '全天', title: '自由日 · SPA / 購物 / 咖啡', emoji: '☕', desc: '盡情享受布拉格的慢活時光。可逛 Manifesto Market 創意市集、泡溫泉或尋找隱藏咖啡館，讓旅程最後幾天更從容。', imgKey: 'prague-cafe' }
+            ]
+          },
+          {
+            id: 'd20', country: 'cz', label: 'Day 20 11/18', fullDate: '11/18 週三', city: '布拉格',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '10:30–12:30', title: '列儂牆', emoji: '🎨', desc: '充滿塗鴉與和平訊息的彩色牆面，自 1980 年代至今持續更新，是布拉格自由精神的象徵，拍照打卡熱點。', imgKey: 'lennon-wall,prague', map: 'https://www.google.com/maps/place/%E5%88%97%E5%84%82%E7%89%86' },
+              { time: '15:00–17:00', title: '伏爾塔瓦河遊船 + 跳舞的房子', emoji: '🚢', desc: '搭船欣賞兩岸城堡與橋樑，上岸可近看法蘭克·蓋瑞設計的跳舞的房子，現代與古典並存的城市風景。', imgKey: 'dancing-house,prague', map: 'https://www.google.com/maps/place/%E8%B7%B3%E8%88%9E%E7%9A%84%E6%88%BF%E5%AD%90' },
+              { time: '18:30–20:30', title: 'Mlýnec 歡送晚餐', emoji: '🍷', desc: '查理大橋旁景觀餐廳，河景與精緻捷克料理，為這趟金秋漫遊畫上完美句點。建議提前訂位。', imgKey: null }
+            ]
+          },
+          {
+            id: 'd21', country: 'cz', label: 'Day 21 11/19', fullDate: '11/19 週四', city: '返程',
+            lat: 50.0755, lng: 14.4378, temp: null, weatherIcon: null,
+            items: [
+              { time: '06:30', title: '退房前往機場', emoji: '🚕', desc: '私人接送約 35–45 分鐘抵達布拉格瓦茨拉夫·哈維爾國際機場，預留充足時間辦理登機。', imgKey: null },
+              { time: '10:25', title: '星宇航空 JX102 起飛', emoji: '✈️', desc: '直飛返回台北桃園機場，飛行約 13–14 小時，預計隔日清晨抵達，圓滿結束東歐三國金秋之旅。', imgKey: null }
+            ]
+          }
+        ],
+
+        // ========== FLIGHTS ==========
+        flights: [
+          {
+            id: 1, route: '台北 → 布達佩斯（經上海）',
+            detail: '10/29 18:40 桃園 T2 起飛 → 10/30 07:05 布達佩斯 T2B 抵達\n東方航空 MU5006 + MU8639（代碼共享）',
+            baggage: '託運 23 kg ×1 · 手提 8 kg · 個人物品',
+            modal: { title: '去程航班細節', content: '起飛：2026/10/29 18:40 臺灣桃園國際機場 T2\n中轉：上海浦東 T1（停留約 5 小時 25 分，行李直掛）\n抵達：2026/10/30 07:05 布達佩斯李斯特·費倫茨國際機場 T2B\n航空公司：中國東方航空 / 上海航空（代碼共享）\n建議提前 3 小時抵達機場辦理登機。' }
+          },
+          {
+            id: 2, route: '布拉格 → 台北',
+            detail: '11/19 10:25 布拉格 T1 起飛 → 11/20 05:20 桃園 T2 抵達\n星宇航空 JX102',
+            baggage: '託運 23 kg ×2 · 手提 + 個人物品總重 ≤7 kg',
+            modal: { title: '回程航班細節', content: '起飛：2026/11/19 10:25 布拉格瓦茨拉夫·哈維爾國際機場 T1\n抵達：2026/11/20 05:20 臺灣桃園國際機場 T2\n航空公司：星宇航空 JX102\n行李額較寬裕（託運兩件），建議提前 3 小時抵達機場。' }
+          }
+        ],
+
+        // ========== HOTELS ==========
+        hotels: [
+          {
+            id: 1, name: 'Nova Apartments', period: '10/30 – 11/07（8晚）', address: 'Akacfa utca 26, 布達佩斯',
+            imgKey: 'apartment,budapest', color: '#FFB7B2',
+            map: 'https://www.google.com/maps/place/Nova+Apartments+Budapest',
+            modal: { title: 'Nova Apartments', content: '地址：1072 布達佩斯, Akacfa utca 26\n電話：+36 30 442 8731\n入住 15:00 / 退房 10:00\n雙臥室公寓 · 4 人 · 含廚房、洗衣機、私人衛浴\n位置靠近歌劇院與猶太區，交通便利。' }
+          },
+          {
+            id: 2, name: 'VIP Apartments', period: '11/07 – 11/10（3晚）', address: 'Michalská 19, 布拉提斯拉瓦',
+            imgKey: 'apartment,bratislava', color: '#C1E1C1',
+            map: 'https://www.google.com/maps/place/VIP+Apartments',
+            modal: { title: 'VIP Apartments', content: '地址：Michalská 19, 811 01 布拉提斯拉瓦\n電話：+421 915 554 555\n入住 14:00 / 退房 11:00\n豪華公寓 · 含早餐 · 2 人房型\n位於舊城步行區，鄰近主廣場與聖馬丁大教堂。' }
+          },
+          {
+            id: 3, name: 'LH Hotel Mlýn', period: '11/10 – 11/12（2晚）', address: 'Parkán 120, 庫倫洛夫',
+            imgKey: 'hotel,cesky-krumlov', color: '#AEC6CF',
+            map: 'https://www.google.com/maps/place/Hotel+Ml%C3%BDn',
+            modal: { title: 'LH Hotel Mlýn', content: '地址：Parkán 120, 381 01 捷克克魯姆洛夫\n電話：+420 722 900 457\n入住 14:00 / 退房 11:00\n河景舒適雙人房 · 含早餐 · 4 人\n臨近城堡與舊城，河畔位置極佳。' }
+          },
+          {
+            id: 4, name: 'Wenceslas Square Residence', period: '11/12 – 11/19（7晚）', address: 'Ve Smečkách, 布拉格',
+            imgKey: 'apartment,prague', color: '#AEC6CF',
+            map: 'https://www.google.com/maps/place/Wenceslas+Square+Residence',
+            modal: { title: 'Wenceslas Square Residence', content: '地址：Ve Smečkách, 110 00 布拉格\n電話：+420 733 175 425\n入住 15:00 / 退房 10:00\n雙臥室公寓 ×2 · 各 1–2 人\n步行可達瓦茨拉夫廣場與國家博物館，生活機能完善。' }
+          }
+        ],
+
+        // ========== BUDGET ==========
+        budget: [
+          {
+            name: '✈️ 機票', color: '#FFB7B2', total: 148800,
+            items: [{ name: '台北↔布達佩斯進、布拉格出（4人）', amount: 148800 }]
+          },
+          {
+            name: '🏨 住宿', color: '#C1E1C1', total: 110206,
+            items: [
+              { name: '布達佩斯 Nova（8晚）', amount: 36230 },
+              { name: '布拉提斯拉瓦 VIP（3晚）', amount: 25110 },
+              { name: '庫倫洛夫 LH Hotel Mlýn（2晚）', amount: 12283 },
+              { name: '布拉格 Wenceslas（7晚）', amount: 36583 }
+            ]
+          },
+          {
+            name: '🍽 餐飲', color: '#AEC6CF', total: 110000,
+            items: [
+              { name: '早餐/簡食', amount: 22000 },
+              { name: '午餐（特色小餐館）', amount: 36000 },
+              { name: '晚餐（含歡送宴）', amount: 52000 }
+            ]
+          },
+          {
+            name: '🎫 門票／體驗', color: '#FFB7B2', total: 32800,
+            items: [
+              { name: '布達佩斯（溫泉、國會、遊船等）', amount: 16000 },
+              { name: '布拉提斯拉瓦（城堡等）', amount: 4000 },
+              { name: '庫倫洛夫（城堡）', amount: 2800 },
+              { name: '布拉格（城堡、庫特納霍拉等）', amount: 10000 }
+            ]
+          },
+          {
+            name: '🚄 交通', color: '#C1E1C1', total: 65800,
+            items: [
+              { name: '布達佩斯市區', amount: 16000 },
+              { name: '布達佩斯→布拉提斯拉瓦 巴士', amount: 1600 },
+              { name: '布拉提斯拉瓦市區／維也納', amount: 8000 },
+              { name: '布拉提斯拉瓦→庫倫洛夫 私車', amount: 17400 },
+              { name: '庫倫洛夫→布拉格 巴士', amount: 1600 },
+              { name: '布拉格市區', amount: 16000 },
+              { name: '機場接送（進＋出）', amount: 5200 }
+            ]
+          },
+          {
+            name: '🛍 其他', color: '#AEC6CF', total: 36000,
+            items: [
+              { name: '小費、eSIM 等雜支', amount: 24000 },
+              { name: '旅遊保險', amount: 12000 }
+            ]
+          }
+        ],
+
+        // ========== LUGGAGE ==========
+        luggage: [
+          {
+            title: '🧳 行李',
+            items: [
+              { name: '行李箱', checked: false }, { name: '手提袋', checked: false },
+              { name: '背包、側包', checked: false }, { name: '隱形腰包', checked: false },
+              { name: '衣物收納壓縮袋', checked: false }, { name: '盥洗用品收納包', checked: false },
+              { name: '化妝包', checked: false }, { name: '環保購物袋', checked: false },
+              { name: '行李箱束帶', checked: false }, { name: '密碼鎖', checked: false },
+              { name: '行李電子秤', checked: false }, { name: '手機掛繩', checked: false }
+            ]
+          },
+          {
+            title: '💳 證件',
+            items: [
+              { name: '電子機票', checked: false }, { name: '護照', checked: false },
+              { name: '身份證', checked: false }, { name: '簽證資料/台胞證', checked: false },
+              { name: '國際駕照/譯本', checked: false }, { name: '行程表', checked: false },
+              { name: '票券憑證 - 住宿', checked: false }, { name: '票券憑證 - 交通', checked: false },
+              { name: '票券憑證 - 景點', checked: false }, { name: '2吋大頭照', checked: false },
+              { name: '外幣現金', checked: false }, { name: '信用卡 / 提款卡', checked: false },
+              { name: '悠遊卡、各地交通卡', checked: false }, { name: '緊急聯絡資料', checked: false }
+            ]
+          },
+          {
+            title: '💻 3C',
+            items: [
+              { name: '手機', checked: false }, { name: '110-220V 充電頭 ×2', checked: false },
+              { name: 'USB / Type-C 充電線', checked: false }, { name: '歐規轉換插頭 ×2', checked: false },
+              { name: '延長線', checked: false }, { name: '行動電源', checked: false },
+              { name: 'SIM / eSIM', checked: false }, { name: '耳機', checked: false },
+              { name: '相機 / 腳架', checked: false }, { name: '筆電 / 平板', checked: false }
+            ]
+          },
+          {
+            title: '👕 衣物',
+            items: [
+              { name: '長袖 / 短袖衣服', checked: false }, { name: '長褲 / 短褲', checked: false },
+              { name: '發熱衣褲', checked: false }, { name: '內衣褲 / 襪子', checked: false },
+              { name: '睡衣', checked: false }, { name: '外套、防風羽絨衣', checked: false },
+              { name: '圍巾、帽子、手套', checked: false }, { name: '鞋子 / 脫鞋', checked: false },
+              { name: '泳裝（溫泉用）', checked: false }
+            ]
+          },
+          {
+            title: '🛀 生活用品',
+            items: [
+              { name: '洗髮乳 / 沐浴乳', checked: false }, { name: '牙膏牙刷', checked: false },
+              { name: '毛巾', checked: false }, { name: '隱形眼鏡組', checked: false },
+              { name: '防蚊液', checked: false }, { name: '護手霜 / 護唇膏', checked: false },
+              { name: '濕紙巾 / 衛生紙', checked: false }, { name: '折疊雨傘', checked: false },
+              { name: '暖暖包', checked: false }, { name: '耳塞 / 眼罩', checked: false }
+            ]
+          },
+          {
+            title: '🧴 化妝保養',
+            items: [
+              { name: '化妝水 / 乳液', checked: false }, { name: '防曬乳', checked: false },
+              { name: '洗面乳 / 卸妝', checked: false }, { name: '粉底 / 眉筆等', checked: false }
+            ]
+          },
+          {
+            title: '💊 藥品',
+            items: [
+              { name: '口罩', checked: false }, { name: '感冒藥 / 腸胃藥', checked: false },
+              { name: '止痛退燒藥', checked: false }, { name: '過敏藥', checked: false },
+              { name: 'OK繃 / 藥膏', checked: false }, { name: '個人常用藥', checked: false }
+            ]
+          },
+          {
+            title: '✏️ 其他 / 待辦',
+            items: [
+              { name: '原子筆 / 資料夾', checked: false }, { name: '台灣特色小禮', checked: false },
+              { name: '買保險', checked: false }, { name: '買 eSIM 網卡', checked: false },
+              { name: '接送機預約', checked: false }
+            ]
+          }
+        ]
+      };
+    }
+  </script>
+</body>
+</html>
