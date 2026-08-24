@@ -99,10 +99,13 @@
                 <p class="text-sm text-hazel/70" x-text="currentDay.date + ' · ' + currentDay.weekday"></p>
                 <h2 class="font-display font-bold text-lg" :style="`color:var(--theme-color)`" x-text="currentDay.city"></h2>
               </div>
-              <button @click="fetchWeather((days.find(x=>x.day===day)||{}).lat, (days.find(x=>x.day===day)||{}).lon)" 
-                class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white shadow-sm border border-hazel/10 text-base font-medium active:scale-95 transition">
-                <span x-text="weather.icon || '⛅'"></span>
-                <span class="font-medium num" x-text="weather.temp || '點我查天氣'"></span>
+              <button type="button" @click="fetchWeather()" 
+                class="flex flex-col items-end gap-0.5 px-3.5 py-2 rounded-2xl bg-white shadow-sm border border-hazel/10 text-base font-medium active:scale-95 transition">
+                <span class="flex items-center gap-1.5">
+                  <span x-text="weather.icon || '⛅'"></span>
+                  <span class="font-medium num" x-text="weather.temp || '點我查天氣'"></span>
+                </span>
+                <span class="text-[11px] text-hazel/50 font-normal" x-show="weather.updated" x-text="weather.updated"></span>
               </button>
             </div>
 
@@ -642,7 +645,8 @@ function app(){
     tab:'plan',
     country:'hungary',
     day:1,
-    weather:{icon:'',temp:null},
+    weather:{icon:'',temp:null,updated:''},
+    _weatherCache:{},
     memo:'',
     infoNote:'',
     modal:{open:false,title:'',body:''},
@@ -677,23 +681,104 @@ function app(){
       document.documentElement.style.setProperty('--theme-color',this.themeColor);
       const first=this.days.find(d=>d.country===id);
       if(first) this.day=first.day;
-      this.weather={icon:'',temp:null};
+      this.weather={icon:'',temp:null,updated:''};
     },
     openModal(m){ this.modal={open:true,title:m.title,body:m.body}; },
+    _weatherIcon(code){
+      const icons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',56:'🌧',57:'🌧',61:'🌧',63:'🌧',65:'🌧',66:'🌧',67:'🌧',71:'🌨',73:'🌨',75:'🌨',77:'🌨',80:'🌧',81:'🌧',82:'🌧',85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈'};
+      return icons[code]||'⛅';
+    },
+    _nowLabel(){
+      const n=new Date();
+      const hh=String(n.getHours()).padStart(2,'0');
+      const mm=String(n.getMinutes()).padStart(2,'0');
+      return '即時 '+hh+':'+mm;
+    },
     async fetchWeather(lat,lon){
       const d=this.days.find(x=>x.day===this.day);
-      const la=lat||(d&&d.lat);
-      const lo=lon||(d&&d.lon);
-      if(!la||!lo){ this.weather={icon:'❓',temp:'—'}; return; }
-      this.weather={icon:'⏳',temp:'…'};
+      const la=(lat!=null&&lat!=='')?Number(lat):(d&&d.lat);
+      const lo=(lon!=null&&lon!=='')?Number(lon):(d&&d.lon);
+      if(!la||!lo||isNaN(la)||isNaN(lo)){
+        this.weather={icon:'❓',temp:'—',updated:'無座標'};
+        return;
+      }
+      const key=la.toFixed(3)+','+lo.toFixed(3);
+      const cached=this._weatherCache[key];
+      if(cached && (Date.now()-cached.ts)<3*60*1000){
+        this.weather={icon:cached.icon,temp:cached.temp,updated:cached.updated+' · 快取'};
+        return;
+      }
+      this.weather={icon:'⏳',temp:'查詢中…',updated:''};
+      // 1) Open-Meteo 即時天氣（優先）
       try{
-        const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo+'&current=temperature_2m,weather_code&timezone=auto');
+        const url='https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo
+          +'&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m'
+          +'&timezone=auto&_='+Date.now();
+        const r=await fetch(url,{cache:'no-store'});
+        if(!r.ok) throw new Error('HTTP '+r.status);
         const j=await r.json();
+        if(j.error) throw new Error(j.reason||'API error');
+        if(!j.current || j.current.temperature_2m==null) throw new Error('無即時資料');
         const t=Math.round(j.current.temperature_2m);
-        const code=j.current.weather_code;
-        const icons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌧',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
-        this.weather={icon:icons[code]||'⛅',temp:t+'°C'};
-      }catch(e){ this.weather={icon:'⚠️',temp:'—'}; }
+        const icon=this._weatherIcon(j.current.weather_code);
+        const updated=this._nowLabel();
+        const result={icon,temp:t+'°C',updated};
+        this.weather=result;
+        this._weatherCache[key]={...result,ts:Date.now()};
+        return;
+      }catch(e1){
+        console.warn('Open-Meteo failed:', e1);
+      }
+      // 2) Open-Meteo 小時預報備援（取最接近當前小時）
+      try{
+        const url2='https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo
+          +'&hourly=temperature_2m,weather_code&forecast_days=1&timezone=auto&_='+Date.now();
+        const r2=await fetch(url2,{cache:'no-store'});
+        if(!r2.ok) throw new Error('HTTP '+r2.status);
+        const j2=await r2.json();
+        if(j2.error) throw new Error(j2.reason||'API error');
+        const temps=j2.hourly&&j2.hourly.temperature_2m;
+        const codes=j2.hourly&&j2.hourly.weather_code;
+        const times=j2.hourly&&j2.hourly.time;
+        if(!temps||!temps.length) throw new Error('無小時資料');
+        let idx=0;
+        if(times&&times.length){
+          const now=Date.now();
+          let best=Infinity;
+          times.forEach((tm,i)=>{
+            const diff=Math.abs(new Date(tm).getTime()-now);
+            if(diff<best){best=diff;idx=i;}
+          });
+        }
+        const t=Math.round(temps[idx]);
+        const icon=this._weatherIcon(codes?codes[idx]:0);
+        const updated=this._nowLabel()+' · 小時';
+        const result={icon,temp:t+'°C',updated};
+        this.weather=result;
+        this._weatherCache[key]={...result,ts:Date.now()};
+        return;
+      }catch(e2){
+        console.warn('Hourly fallback failed:', e2);
+      }
+      // 3) wttr.in 文字備援
+      try{
+        const r3=await fetch('https://wttr.in/'+la+','+lo+'?format=j1',{cache:'no-store'});
+        if(!r3.ok) throw new Error('HTTP '+r3.status);
+        const j3=await r3.json();
+        const cur=j3.current_condition&&j3.current_condition[0];
+        if(!cur) throw new Error('無 wttr 資料');
+        const t=Math.round(Number(cur.temp_C));
+        const code=Number(cur.weatherCode);
+        const icon=this._weatherIcon(code)||'🌤';
+        const updated=this._nowLabel()+' · 備援';
+        const result={icon,temp:t+'°C',updated};
+        this.weather=result;
+        this._weatherCache[key]={...result,ts:Date.now()};
+        return;
+      }catch(e3){
+        console.warn('wttr.in failed:', e3);
+      }
+      this.weather={icon:'⚠️',temp:'無法取得',updated:'請檢查網路後再點一次'};
     },
     exportFinanceToExcel(){
       try {
