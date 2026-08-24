@@ -26,6 +26,8 @@
   }
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -411,6 +413,35 @@
         </div>
       </div>
 
+      <!-- FINANCE -->
+      <div x-show="tab==='finance'" x-transition class="space-y-4">
+        <h2 class="font-display font-bold text-xl px-1" :style="`color:var(--theme-color)`">💰 分帳與結算</h2>
+
+        <!-- Card A: Lightsplit -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <h3 class="font-semibold mb-2">Lightsplit 分帳</h3>
+          <p class="text-hazel/80 text-[15px] mb-4">透過 LINE 官方帳號快速記錄與結算旅途開支，支援多人即時分帳。</p>
+          <a href="https://liff.line.me/1655320992-Y8GowEpw/g/aV57hnZ8buD7JBonr5Hw9m"
+             target="_blank"
+             rel="noopener"
+             class="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-medium transition active:scale-[0.98]"
+             style="background:#06C755">
+            <span>開啟 LINE 分帳群組</span>
+          </a>
+        </div>
+
+        <!-- Card B: Excel Export -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <h3 class="font-semibold mb-2">匯出 Excel 結算表</h3>
+          <p class="text-hazel/80 text-[15px] mb-4">將目前預算資料展平後匯出為 `.xlsx`，方便後續分帳與留存。</p>
+          <button @click="exportFinanceToExcel()"
+                  class="w-full py-3 rounded-xl text-white font-medium transition active:scale-[0.98]"
+                  :style="`background:var(--theme-color)`">
+            下載旅遊分帳結算表
+          </button>
+        </div>
+      </div>
+
     <!-- BOTTOM NAV -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white/95 backdrop-blur border-t border-hazel/10 px-1 pb-safe">
       <div class="flex justify-around py-2">
@@ -624,7 +655,8 @@ function app(){
       {id:'transport',icon:'🚌',label:'交通'},
       {id:'shopping',icon:'🛍',label:'購物'},
       {id:'food',icon:'🍽',label:'美食'},
-      {id:'info',icon:'ℹ️',label:'資訊'}
+      {id:'info',icon:'ℹ️',label:'資訊'},
+      {id:'finance',icon:'💰',label:'分帳'}
     ],
     countries:[
       {id:'hungary',name:'🇭🇺 匈牙利',color:'#8B1E3F'},
@@ -662,6 +694,35 @@ function app(){
         const icons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌧',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
         this.weather={icon:icons[code]||'⛅',temp:t+'°C'};
       }catch(e){ this.weather={icon:'⚠️',temp:'—'}; }
+    },
+    exportFinanceToExcel(){
+      try {
+        if (typeof XLSX === 'undefined') {
+          alert('Excel 匯出元件尚未載入完成，請確認網路連線後重新整理頁面再試。');
+          return;
+        }
+        const rows = [];
+        (this.budget || []).forEach(sec => {
+          (sec.items || []).forEach(item => {
+            rows.push({
+              '預算類別': sec.title || '',
+              '項目名稱': item.name || '',
+              '預估金額(NT$)': item.amount ?? 0
+            });
+          });
+        });
+        if (!rows.length) {
+          alert('目前沒有可匯出的預算資料');
+          return;
+        }
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '分帳結算');
+        XLSX.writeFile(wb, '旅遊分帳結算表.xlsx');
+      } catch (err) {
+        console.error(err);
+        alert('匯出失敗：' + (err && err.message ? err.message : '請改用電腦瀏覽器開啟本頁後再試'));
+      }
     },
     init(){
       this.$watch('day', () => { this.fetchWeather(); });
