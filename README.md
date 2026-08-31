@@ -1,71 +1,117 @@
 # 🌍 East Europe 2026 Travel Planner
 
+> 🇭🇺 Hungary · 🇸🇰 Slovakia · 🇨🇿 Czechia
+
+An interactive **23-day Central and Eastern Europe travel planner** designed for mobile-friendly trip planning.
+
 ## 🚀 Live Demo
-👉 [立即體驗 East Europe 2026 互動旅遊網站](https://hoya6.github.io/east-europe-2026/)
 
-🇭🇺 Hungary · 🇸🇰 Slovakia · 🇨🇿 Czechia
+👉 **[立即體驗 East Europe 2026 互動旅遊網站](https://hoya6.github.io/east-europe-2026/)**
 
-An interactive travel planning website for a 23-day Central and Eastern Europe journey.
+---
 
-✨ Features
+## ✨ Features
 
-* 📅 Interactive daily itinerary
-* 🗺️ Google Maps navigation
-* 🌤️ Weather information
-* 🎫 Tickets and attractions
-* 🚌 Transportation information
-* 🍽️ Food recommendations
-* 🛍️ Shopping guide
-* ✅ Travel checklist
-* 💰 Travel budget
-* 💵 Expense splitting
-* 📊 Excel expense export
-* 📱 Mobile-friendly responsive design
+- 📅 **Interactive daily itinerary**
+- 🗺️ **Google Maps navigation**
+- 🌤️ **Weather information**
+- 🎟️ **Tickets & attractions**
+- 🚌 **Transportation information**
+- 🍽️ **Food recommendations**
+- 🛍️ **Shopping guide**
+- 📱 **Mobile-friendly travel planning experience**
 
-🌍 Trip
+---
 
-The project is designed around a 23-day journey through:
+## 🗺️ Journey
 
-🇭🇺 Hungary
-🇸🇰 Slovakia
-🇨🇿 Czechia
+### 🇭🇺 Hungary
+**Budapest**
 
-It combines itinerary planning and practical travel information into one simple web application.
+Explore the capital of Hungary and begin the journey through Central Europe.
 
-🚀 Live Demo
+### 🇸🇰 Slovakia
+**Bratislava**
 
-The project can be accessed through GitHub Pages.
+Continue the journey to Slovakia and discover Bratislava.
 
-🛠️ Built With
+### 🇨🇿 Czechia
+**Prague**
 
-* HTML
-* JavaScript
-* Alpine.js
-* Tailwind CSS
-* SheetJS
-* Google Maps
-* Weather API
+Finish the journey in Prague, one of Central Europe's most iconic destinations.
 
-🤖 AI-Assisted Development
+---
 
-Codex is planned as part of the project’s ongoing maintenance workflow.
+## 🧭 Trip Overview
 
-It will be used to help:
+**23 Days · 3 Countries · Central & Eastern Europe**
 
-* analyze and debug code
-* improve responsive design
-* maintain travel data
-* review code changes
-* improve reliability
-* develop new features
-* prepare documentation and releases
+**Budapest → Bratislava → Prague**
 
-All changes remain subject to human review and testing.
+The planner brings the itinerary, navigation, weather, attractions, transportation, food and shopping information together in one place.
 
-📱 Project Goal
+---
 
-The goal is to create a practical, reusable, and open-source travel planning tool that combines itinerary, transportation, maps, weather, budgeting, and travel information in one application.
+## 📱 Designed for Mobile
 
-📄 License
+East Europe 2026 is designed with a **mobile-first travel experience** in mind.
 
-This project is open source and intended for learning, personal travel planning, and community improvement.
+The website is intended to be convenient to use while travelling, allowing travelers to quickly access itinerary information, maps, weather, attractions, transportation and recommendations from a phone.
+
+---
+
+## 🎯 How to Use
+
+1. Open the **Live Demo**.
+2. Browse the 23-day itinerary.
+3. Select the destination or activity you want to explore.
+4. Use Google Maps for navigation.
+5. Check weather information before heading out.
+6. Explore tickets, attractions, transportation and recommendations.
+7. Use the planner as a companion throughout the journey.
+
+---
+
+## 💡 Project Goal
+
+The goal of this project is to create a practical and easy-to-use digital travel planner that brings essential trip information together in one mobile-friendly experience.
+
+Instead of switching between multiple sources, travelers can use one planner to organize and explore their journey.
+
+---
+
+## 🛠️ Project
+
+**Project:** East Europe 2026 Travel Planner  
+**Trip Length:** 23 Days  
+**Countries:** Hungary · Slovakia · Czechia  
+**Platform:** Web  
+**Design Focus:** Mobile-friendly travel planning
+
+---
+
+## ❤️ Why This Project?
+
+Travel planning often means jumping between maps, weather websites, attraction pages, transportation information and restaurant recommendations.
+
+East Europe 2026 brings these travel-planning elements together into one interactive experience.
+
+**Plan smarter. Travel better. Experience more. ❤️**
+
+---
+
+## 📌 Project Status
+
+**Completed — 2026 Travel Planner**
+
+The project is available as a public GitHub repository with a live GitHub Pages demo.
+
+---
+
+## 🔗 Links
+
+🚀 **Live Demo:**  
+[East Europe 2026 Travel Planner](https://hoya6.github.io/east-europe-2026/)
+
+📦 **GitHub Repository:**  
+[East Europe 2026](https://github.com/hoya6/east-europe-2026)
