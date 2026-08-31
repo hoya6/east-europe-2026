@@ -1,4 +1,7 @@
-🌍 East Europe 2026 Travel Planner
+# 🌍 East Europe 2026 Travel Planner
+
+## 🚀 Live Demo
+👉 [立即體驗 East Europe 2026 互動旅遊網站](https://hoya6.github.io/east-europe-2026/)
 
 🇭🇺 Hungary · 🇸🇰 Slovakia · 🇨🇿 Czechia
 
